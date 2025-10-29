@@ -3,7 +3,7 @@ import { within } from "@testing-library/dom";
 import userEvent from "@testing-library/user-event";
 
 // Types pour les différentes interactions
-type ClickInteraction = {
+export type ClickInteraction = {
   type: "click";
   selector: string;
   options?: {
@@ -15,7 +15,7 @@ type ClickInteraction = {
   nth?: number; // Si plusieurs éléments matchent
 };
 
-type TypeInteraction = {
+export type TypeInteraction = {
   type: "type";
   selector: string;
   text: string;
@@ -26,45 +26,45 @@ type TypeInteraction = {
   };
 };
 
-type KeyboardInteraction = {
+export type KeyboardInteraction = {
   type: "keyboard";
   keys: string;
   selector?: string; // Optionnel, sinon sur l'élément actif
 };
 
-type HoverInteraction = {
+export type HoverInteraction = {
   type: "hover";
   selector: string;
 };
 
-type UnhoverInteraction = {
+export type UnhoverInteraction = {
   type: "unhover";
   selector: string;
 };
 
-type SelectInteraction = {
+export type SelectInteraction = {
   type: "select";
   selector: string;
 };
 
-type UploadInteraction = {
+export type UploadInteraction = {
   type: "upload";
   selector: string;
   files: Array<{ name: string; content: string; type: string }>;
 };
 
-type ClearInteraction = {
+export type ClearInteraction = {
   type: "clear";
   selector: string;
 };
 
-type TabInteraction = {
+export type TabInteraction = {
   type: "tab";
   shift?: boolean;
   times?: number;
 };
 
-type UserInteraction =
+export type UserInteraction =
   | ClickInteraction
   | TypeInteraction
   | KeyboardInteraction
@@ -76,64 +76,64 @@ type UserInteraction =
   | TabInteraction;
 
 // Arbitraires pour les sélecteurs CSS courants
-const selectorArbitrary = fc.oneof(
-  // Sélecteurs par attribut data-testid (recommandé)
-  fc.constantFrom(
-    '[data-testid="submit"]',
-    '[data-testid="cancel"]',
-    '[data-testid="input-email"]',
-    '[data-testid="input-password"]'
-  ),
-  // Sélecteurs par rôle ARIA
-  fc.constantFrom(
-    '[role="button"]',
-    '[role="link"]',
-    '[role="textbox"]',
-    '[role="combobox"]',
-    '[role="checkbox"]',
-    '[role="radio"]'
-  ),
-  // Sélecteurs par type d'élément
-  fc.constantFrom(
-    "button",
-    "a",
-    'input[type="text"]',
-    'input[type="email"]',
-    'input[type="password"]',
-    'input[type="checkbox"]',
-    'input[type="radio"]',
-    "select",
-    "textarea"
-  )
-);
+const selectorArbitrary = (otherSelectors: string[] = []) =>
+  fc.oneof(
+    // selectors by ARIA role
+    fc.constantFrom(
+      '[role="button"]',
+      '[role="link"]',
+      '[role="textbox"]',
+      '[role="combobox"]',
+      '[role="checkbox"]',
+      '[role="radio"]'
+    ),
+
+    // selectors by element type
+    fc.constantFrom(
+      "button",
+      "a",
+      'input[type="text"]',
+      'input[type="number"]',
+      'input[type="email"]',
+      'input[type="password"]',
+      'input[type="checkbox"]',
+      'input[type="radio"]',
+      "select",
+      "textarea"
+    ),
+
+    // other custom selectors
+    fc.constantFrom(...otherSelectors)
+  );
 
 // Arbitraires pour différents types de texte
-const textContentArbitrary = fc.oneof(
-  // Texte normal
-  fc.string({ minLength: 1, maxLength: 100 }),
-  // Email
-  fc.emailAddress(),
-  // Nombres
-  fc.integer({ min: -1000000, max: 1000000 }).map(String),
-  // Caractères spéciaux et edge cases
-  fc.constantFrom(
-    "",
-    " ",
-    "  multiple  spaces  ",
-    "éàçù", // Caractères accentués
-    "你好", // Unicode
-    '<script>alert("xss")</script>',
-    '"; DROP TABLE users; --',
-    "null",
-    "undefined",
-    "\\n\\t\\r",
-    "0",
-    "-1",
-    "999999999999999999999"
-  )
-);
+const textContentArbitrary = () =>
+  fc.oneof(
+    // random normal strings
+    fc.string({ minLength: 1, maxLength: 100 }),
+    // email
+    fc.emailAddress(),
+    // numbers
+    fc.integer({ min: -1000000, max: 1000000 }).map(String),
+    // special characters and edge cases
+    fc.constantFrom(
+      "",
+      " ",
+      "  multiple  spaces  ",
+      "éàçù", // accents
+      "你好", // unicode
+      '<script>alert("xss")</script>',
+      '"; DROP TABLE users; --',
+      "null",
+      "undefined",
+      "\\n\\t\\r",
+      "0",
+      "-1",
+      "999999999999999999999"
+    )
+  );
 
-// Arbitraire pour les séquences de touches spéciales
+// arbitrary for special keyboard keys
 const specialKeysArbitrary = fc.constantFrom(
   "{Enter}",
   "{Escape}",
@@ -157,110 +157,226 @@ const specialKeysArbitrary = fc.constantFrom(
   "{Alt>}a{/Alt}" // Alt + A
 );
 
-// Arbitraires pour chaque type d'interaction
-const clickArbitrary: fc.Arbitrary<ClickInteraction> = fc.record({
-  type: fc.constant("click" as const),
-  selector: selectorArbitrary,
-  options: fc.option(
-    fc.record({
-      ctrlKey: fc.boolean(),
-      shiftKey: fc.boolean(),
-      altKey: fc.boolean(),
-      button: fc.constantFrom(0, 1, 2) as fc.Arbitrary<0 | 1 | 2>,
-    }),
-    { nil: undefined }
-  ),
-  nth: fc.option(fc.integer({ min: 0, max: 10 }), { nil: undefined }),
-});
+// Helper to check if a value is a fast-check arbitrary
+function isArbitrary(value: any): value is fc.Arbitrary<any> {
+  return value && typeof value.generate === "function";
+}
 
-const typeArbitrary: fc.Arbitrary<TypeInteraction> = fc.record({
-  type: fc.constant("type" as const),
-  selector: fc.oneof(
-    fc.constant('input[type="text"]'),
-    fc.constant('input[type="email"]'),
-    fc.constant('input[type="password"]'),
-    fc.constant('input[type="search"]'),
-    fc.constant('input[type="tel"]'),
-    fc.constant('input[type="url"]'),
-    fc.constant("textarea"),
-    fc.constant('[contenteditable="true"]')
-  ),
-  text: textContentArbitrary,
-  options: fc.option(
-    fc.record({
-      delay: fc.integer({ min: 0, max: 100 }),
-      skipClick: fc.boolean(),
-      skipAutoClose: fc.boolean(),
-    }),
-    { nil: undefined }
-  ),
-});
+// Helper to convert a value to an arbitrary
+function toArbitrary<T>(value: T | fc.Arbitrary<T>): fc.Arbitrary<T> {
+  return isArbitrary(value) ? value : fc.constant(value);
+}
 
-const keyboardArbitrary: fc.Arbitrary<KeyboardInteraction> = fc.record({
-  type: fc.constant("keyboard" as const),
-  keys: specialKeysArbitrary,
-  selector: fc.option(selectorArbitrary, { nil: undefined }),
-});
+// ----- arbitraries for each interactions type -----
 
-const hoverArbitrary: fc.Arbitrary<HoverInteraction> = fc.record({
-  type: fc.constant("hover" as const),
-  selector: selectorArbitrary,
-});
+type ClickArbitraryInput = {
+  selector?: string | fc.Arbitrary<string>;
+  options?: ClickInteraction["options"] | fc.Arbitrary<ClickInteraction["options"]>;
+  nth?: number | fc.Arbitrary<number | undefined>;
+};
 
-const unhoverArbitrary: fc.Arbitrary<UnhoverInteraction> = fc.record({
-  type: fc.constant("unhover" as const),
-  selector: selectorArbitrary,
-});
+export const clickArbitrary: (
+  interaction?: ClickArbitraryInput
+) => fc.Arbitrary<ClickInteraction> = (interaction = {}) =>
+  fc.record({
+    type: fc.constant("click" as const),
+    selector: interaction.selector !== undefined
+      ? toArbitrary(interaction.selector)
+      : selectorArbitrary(),
+    options: interaction.options !== undefined
+      ? toArbitrary(interaction.options)
+      : fc.option(
+          fc.record({
+            ctrlKey: fc.boolean(),
+            shiftKey: fc.boolean(),
+            altKey: fc.boolean(),
+            button: fc.constantFrom(0, 1, 2) as fc.Arbitrary<0 | 1 | 2>,
+          }),
+          { nil: undefined }
+        ),
+    nth: interaction.nth !== undefined
+      ? toArbitrary(interaction.nth)
+      : fc.option(fc.integer({ min: 0, max: 10 }), { nil: undefined }),
+  });
 
-const selectArbitrary: fc.Arbitrary<SelectInteraction> = fc.record({
-  type: fc.constant("select" as const),
-  selector: fc.constant("select"),
-});
+type TypeArbitraryInput = {
+  selector?: string | fc.Arbitrary<string>;
+  text?: string | fc.Arbitrary<string>;
+  options?: TypeInteraction["options"] | fc.Arbitrary<TypeInteraction["options"]>;
+};
 
-const uploadArbitrary: fc.Arbitrary<UploadInteraction> = fc.record({
-  type: fc.constant("upload" as const),
-  selector: fc.constant('input[type="file"]'),
-  files: fc.array(
-    fc.record({
-      name: fc.constantFrom("test.txt", "image.png", "document.pdf"),
-      content: fc.string({ minLength: 10, maxLength: 100 }),
-      type: fc.constantFrom("text/plain", "image/png", "application/pdf"),
-    }),
-    { minLength: 1, maxLength: 3 }
-  ),
-});
+export const typeArbitrary: (
+  interaction?: TypeArbitraryInput
+) => fc.Arbitrary<TypeInteraction> = (interaction = {}) =>
+  fc.record({
+    type: fc.constant("type" as const),
+    selector: interaction.selector !== undefined
+      ? toArbitrary(interaction.selector)
+      : fc.oneof(
+          fc.constant('input[type="text"]'),
+          fc.constant('input[type="number"]'),
+          fc.constant('input[type="email"]'),
+          fc.constant('input[type="password"]'),
+          fc.constant('input[type="search"]'),
+          fc.constant('input[type="tel"]'),
+          fc.constant('input[type="url"]'),
+          fc.constant("textarea"),
+          fc.constant('[contenteditable="true"]')
+        ),
+    text: interaction.text !== undefined
+      ? toArbitrary(interaction.text)
+      : textContentArbitrary(),
+    options: interaction.options !== undefined
+      ? toArbitrary(interaction.options)
+      : fc.option(
+          fc.record({
+            delay: fc.integer({ min: 0, max: 100 }),
+            skipClick: fc.boolean(),
+            skipAutoClose: fc.boolean(),
+          }),
+          { nil: undefined }
+        ),
+  });
 
-const clearArbitrary: fc.Arbitrary<ClearInteraction> = fc.record({
-  type: fc.constant("clear" as const),
-  selector: fc.oneof(fc.constant("input"), fc.constant("textarea")),
-});
+type KeyboardArbitraryInput = {
+  keys?: string | fc.Arbitrary<string>;
+  selector?: string | fc.Arbitrary<string | undefined>;
+};
 
-const tabArbitrary: fc.Arbitrary<TabInteraction> = fc.record({
-  type: fc.constant("tab" as const),
-  shift: fc.boolean(),
-  times: fc.integer({ min: 1, max: 5 }),
-});
+export const keyboardArbitrary: (
+  interaction?: KeyboardArbitraryInput
+) => fc.Arbitrary<KeyboardInteraction> = (interaction = {}) =>
+  fc.record({
+    type: fc.constant("keyboard" as const),
+    keys: interaction.keys !== undefined
+      ? toArbitrary(interaction.keys)
+      : specialKeysArbitrary,
+    selector: interaction.selector !== undefined
+      ? toArbitrary(interaction.selector)
+      : fc.option(selectorArbitrary(), { nil: undefined }),
+  });
+
+type HoverArbitraryInput = {
+  selector?: string | fc.Arbitrary<string>;
+};
+
+export const hoverArbitrary: (
+  interaction?: HoverArbitraryInput
+) => fc.Arbitrary<HoverInteraction> = (interaction = {}) =>
+  fc.record({
+    type: fc.constant("hover" as const),
+    selector: interaction.selector !== undefined
+      ? toArbitrary(interaction.selector)
+      : selectorArbitrary(),
+  });
+
+type UnhoverArbitraryInput = {
+  selector?: string | fc.Arbitrary<string>;
+};
+
+export const unhoverArbitrary: (
+  interaction?: UnhoverArbitraryInput
+) => fc.Arbitrary<UnhoverInteraction> = (interaction = {}) =>
+  fc.record({
+    type: fc.constant("unhover" as const),
+    selector: interaction.selector !== undefined
+      ? toArbitrary(interaction.selector)
+      : selectorArbitrary(),
+  });
+
+type SelectArbitraryInput = {
+  selector?: string | fc.Arbitrary<string>;
+};
+
+export const selectArbitrary: (
+  interaction?: SelectArbitraryInput
+) => fc.Arbitrary<SelectInteraction> = (interaction = {}) =>
+  fc.record({
+    type: fc.constant("select" as const),
+    selector: interaction.selector !== undefined
+      ? toArbitrary(interaction.selector)
+      : fc.constant("select"),
+  });
+
+type UploadArbitraryInput = {
+  selector?: string | fc.Arbitrary<string>;
+  files?: UploadInteraction["files"] | fc.Arbitrary<UploadInteraction["files"]>;
+};
+
+export const uploadArbitrary: (
+  interaction?: UploadArbitraryInput
+) => fc.Arbitrary<UploadInteraction> = (interaction = {}) =>
+  fc.record({
+    type: fc.constant("upload" as const),
+    selector: interaction.selector !== undefined
+      ? toArbitrary(interaction.selector)
+      : fc.constant('input[type="file"]'),
+    files: interaction.files !== undefined
+      ? toArbitrary(interaction.files)
+      : fc.array(
+          fc.record({
+            name: fc.constantFrom("test.txt", "image.png", "document.pdf"),
+            content: fc.string({ minLength: 10, maxLength: 100 }),
+            type: fc.constantFrom("text/plain", "image/png", "application/pdf"),
+          }),
+          { minLength: 1, maxLength: 3 }
+        ),
+  });
+
+type ClearArbitraryInput = {
+  selector?: string | fc.Arbitrary<string>;
+};
+
+export const clearArbitrary: (
+  interaction?: ClearArbitraryInput
+) => fc.Arbitrary<ClearInteraction> = (interaction = {}) =>
+  fc.record({
+    type: fc.constant("clear" as const),
+    selector: interaction.selector !== undefined
+      ? toArbitrary(interaction.selector)
+      : fc.oneof(fc.constant("input"), fc.constant("textarea")),
+  });
+
+type TabArbitraryInput = {
+  shift?: boolean | fc.Arbitrary<boolean>;
+  times?: number | fc.Arbitrary<number>;
+};
+
+export const tabArbitrary: (
+  interaction?: TabArbitraryInput
+) => fc.Arbitrary<TabInteraction> = (interaction = {}) =>
+  fc.record({
+    type: fc.constant("tab" as const),
+    shift: interaction.shift !== undefined
+      ? toArbitrary(interaction.shift)
+      : fc.boolean(),
+    times: interaction.times !== undefined
+      ? toArbitrary(interaction.times)
+      : fc.integer({ min: 1, max: 5 }),
+  });
 
 // Arbitraire principal qui combine toutes les interactions
-export const userInteractionArbitrary = (): fc.Arbitrary<UserInteraction> =>
-  fc.oneof(
-    { weight: 30, arbitrary: clickArbitrary }, // Plus de clics
-    { weight: 25, arbitrary: typeArbitrary }, // Beaucoup de saisie
-    { weight: 10, arbitrary: keyboardArbitrary }, // Actions clavier
-    { weight: 8, arbitrary: hoverArbitrary }, // Survol
-    { weight: 2, arbitrary: unhoverArbitrary }, // Fin de survol
-    { weight: 5, arbitrary: selectArbitrary }, // Sélection dans liste
-    { weight: 2, arbitrary: uploadArbitrary }, // Upload de fichiers
-    { weight: 5, arbitrary: clearArbitrary }, // Effacement
-    { weight: 13, arbitrary: tabArbitrary } // Navigation au clavier
-  );
+export const defaultUserInteractionArbitrary =
+  (): fc.Arbitrary<UserInteraction> =>
+    fc.oneof(
+      { weight: 30, arbitrary: clickArbitrary() }, // Plus de clics
+      { weight: 25, arbitrary: typeArbitrary() }, // Beaucoup de saisie
+      { weight: 10, arbitrary: keyboardArbitrary() }, // Actions clavier
+      { weight: 8, arbitrary: hoverArbitrary() }, // Survol
+      { weight: 2, arbitrary: unhoverArbitrary() }, // Fin de survol
+      { weight: 5, arbitrary: selectArbitrary() }, // Sélection dans liste
+      { weight: 2, arbitrary: uploadArbitrary() }, // Upload de fichiers
+      { weight: 5, arbitrary: clearArbitrary() }, // Effacement
+      { weight: 13, arbitrary: tabArbitrary() } // Navigation au clavier
+    );
 
 // Arbitraire pour des séquences d'interactions
 export const interactionSequenceArbitrary = (
   minLength: number = 1,
-  maxLength: number = 20
+  maxLength: number = 10,
+  interactionsSequenceArbitrary = defaultUserInteractionArbitrary
 ): fc.Arbitrary<UserInteraction[]> =>
-  fc.array(userInteractionArbitrary(), { minLength, maxLength });
+  fc.array(interactionsSequenceArbitrary(), { minLength, maxLength });
 
 // Fonction pour exécuter une interaction
 export async function executeInteraction(
@@ -279,7 +395,7 @@ export async function executeInteraction(
 
         if (element) {
           if (interaction.options) {
-            // Click avec modificateurs
+            // @ts-expect-error "click" actually accepts options
             await user.click(element as Element, interaction.options);
           } else {
             await user.click(element as Element);
@@ -409,34 +525,36 @@ export async function executeInteractionSequence(
 }
 
 export function createInteractionProperty({
-  renderComponent,
+  setup,
   invariants,
   options = {
     sequenceMinLength: 1,
     sequenceMaxLength: 10,
+    userInteractionArbitrary: defaultUserInteractionArbitrary,
   },
 }: {
-  renderComponent: () => HTMLElement;
+  setup: () => HTMLElement;
   invariants: Array<(container: HTMLElement) => boolean | Promise<boolean>>;
   options?: {
     sequenceMinLength?: number;
     sequenceMaxLength?: number;
+    userInteractionArbitrary?: () => fc.Arbitrary<UserInteraction>;
   };
 }) {
   return fc.asyncProperty(
     interactionSequenceArbitrary(
       options?.sequenceMinLength,
-      options?.sequenceMaxLength
+      options?.sequenceMaxLength,
+      options?.userInteractionArbitrary
     ),
     async (interactions) => {
       console.debug({ interactions });
 
-      const container = renderComponent();
+      const container = setup();
 
       try {
         await executeInteractionSequence(container, interactions);
 
-        // Vérifier tous les invariants
         for (const invariant of invariants) {
           const result = await invariant(container);
 
