@@ -2,7 +2,7 @@ import * as fc from "fast-check";
 import { within } from "@testing-library/dom";
 import userEvent from "@testing-library/user-event";
 
-// Types pour les différentes interactions
+// Types for different interactions
 export type ClickInteraction = {
   type: "click";
   selector: string;
@@ -12,7 +12,7 @@ export type ClickInteraction = {
     altKey?: boolean;
     button?: 0 | 1 | 2;
   };
-  nth?: number; // Si plusieurs éléments matchent
+  nth?: number; // If multiple elements match
 };
 
 export type TypeInteraction = {
@@ -29,7 +29,7 @@ export type TypeInteraction = {
 export type KeyboardInteraction = {
   type: "keyboard";
   keys: string;
-  selector?: string; // Optionnel, sinon sur l'élément actif
+  selector?: string; // Optional, otherwise on the active element
 };
 
 export type HoverInteraction = {
@@ -75,7 +75,7 @@ export type UserInteraction =
   | ClearInteraction
   | TabInteraction;
 
-// Arbitraires pour les sélecteurs CSS courants
+// Arbitraries for common CSS selectors
 const selectorArbitrary = (otherSelectors: string[] = []) =>
   fc.oneof(
     // selectors by ARIA role
@@ -106,7 +106,7 @@ const selectorArbitrary = (otherSelectors: string[] = []) =>
     fc.constantFrom(...otherSelectors)
   );
 
-// Arbitraires pour différents types de texte
+// Arbitraries for different text types
 const textContentArbitrary = () =>
   fc.oneof(
     // random normal strings
@@ -355,22 +355,22 @@ export const tabArbitrary: (
       : fc.integer({ min: 1, max: 5 }),
   });
 
-// Arbitraire principal qui combine toutes les interactions
+// Main arbitrary that combines all interactions
 export const defaultUserInteractionArbitrary =
   (): fc.Arbitrary<UserInteraction> =>
     fc.oneof(
-      { weight: 30, arbitrary: clickArbitrary() }, // Plus de clics
-      { weight: 25, arbitrary: typeArbitrary() }, // Beaucoup de saisie
-      { weight: 10, arbitrary: keyboardArbitrary() }, // Actions clavier
-      { weight: 8, arbitrary: hoverArbitrary() }, // Survol
-      { weight: 2, arbitrary: unhoverArbitrary() }, // Fin de survol
-      { weight: 5, arbitrary: selectArbitrary() }, // Sélection dans liste
-      { weight: 2, arbitrary: uploadArbitrary() }, // Upload de fichiers
-      { weight: 5, arbitrary: clearArbitrary() }, // Effacement
-      { weight: 13, arbitrary: tabArbitrary() } // Navigation au clavier
+      { weight: 30, arbitrary: clickArbitrary() }, // More clicks
+      { weight: 25, arbitrary: typeArbitrary() }, // Lots of typing
+      { weight: 10, arbitrary: keyboardArbitrary() }, // Keyboard actions
+      { weight: 8, arbitrary: hoverArbitrary() }, // Hover
+      { weight: 2, arbitrary: unhoverArbitrary() }, // Unhover
+      { weight: 5, arbitrary: selectArbitrary() }, // List selection
+      { weight: 2, arbitrary: uploadArbitrary() }, // File upload
+      { weight: 5, arbitrary: clearArbitrary() }, // Clear
+      { weight: 13, arbitrary: tabArbitrary() } // Keyboard navigation
     );
 
-// Arbitraire pour des séquences d'interactions
+// Arbitrary for interaction sequences
 export const interactionSequenceArbitrary = (
   minLength: number = 1,
   maxLength: number = 10,
@@ -378,7 +378,7 @@ export const interactionSequenceArbitrary = (
 ): fc.Arbitrary<UserInteraction[]> =>
   fc.array(interactionsSequenceArbitrary(), { minLength, maxLength });
 
-// Fonction pour exécuter une interaction
+// Function to execute an interaction
 export async function executeInteraction(
   container: HTMLElement,
   interaction: UserInteraction,
@@ -494,7 +494,7 @@ export async function executeInteraction(
       }
     }
   } catch (error) {
-    // Log mais ne pas faire échouer - l'élément n'existe peut-être pas
+    // Log but don't fail - the element may not exist
     console.debug(
       `Interaction failed: ${interaction.type} on ${
         (interaction as any).selector
@@ -504,7 +504,7 @@ export async function executeInteraction(
   }
 }
 
-// Fonction helper pour exécuter une séquence complète
+// Helper function to execute a complete sequence
 export async function executeInteractionSequence(
   container: HTMLElement,
   interactions: UserInteraction[],

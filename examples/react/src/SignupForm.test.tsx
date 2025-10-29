@@ -14,10 +14,10 @@ describe("SignupForm", () => {
       createInteractionProperty({
         setup: () => render(<SignupForm />).container,
         invariants: [
-          // Le formulaire ne doit jamais avoir d'erreur JS
+          // form should not crash
           (container) => !container.querySelector(".error-boundary"),
 
-          // Les champs required doivent toujours être marqués
+          // required fields must always be marked
           (container) => {
             const required = container.querySelectorAll("[required]");
             return Array.from(required).every((el) =>
@@ -25,7 +25,7 @@ describe("SignupForm", () => {
             );
           },
 
-          // Pas plus d'une modale ouverte
+          // only one open dialog at a time
           (container) =>
             container.querySelectorAll('[role="dialog"]').length <= 1,
         ],
