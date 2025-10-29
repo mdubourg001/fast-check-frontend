@@ -1,4 +1,5 @@
 import * as fc from "fast-check";
+import { within } from "@testing-library/dom";
 import userEvent from "@testing-library/user-event";
 
 // Types pour les différentes interactions
@@ -44,7 +45,6 @@ type UnhoverInteraction = {
 type SelectInteraction = {
   type: "select";
   selector: string;
-  values: string | string[];
 };
 
 type UploadInteraction = {
@@ -215,13 +215,6 @@ const unhoverArbitrary: fc.Arbitrary<UnhoverInteraction> = fc.record({
 const selectArbitrary: fc.Arbitrary<SelectInteraction> = fc.record({
   type: fc.constant("select" as const),
   selector: fc.constant("select"),
-  values: fc.oneof(
-    fc.constantFrom("option1", "option2", "option3"),
-    fc.array(fc.constantFrom("option1", "option2"), {
-      minLength: 1,
-      maxLength: 3,
-    })
-  ),
 });
 
 const uploadArbitrary: fc.Arbitrary<UploadInteraction> = fc.record({
@@ -338,7 +331,15 @@ export async function executeInteraction(
           interaction.selector
         ) as HTMLSelectElement;
         if (element) {
-          await user.selectOptions(element, interaction.values);
+          const options =
+            within(element).getAllByRole<HTMLOptionElement>("option");
+
+          const randomOption = fc.sample(
+            fc.constantFrom(...options.map((opt) => opt.value)),
+            1
+          )[0];
+
+          await user.selectOptions(element, randomOption);
         }
         break;
       }
@@ -407,7 +408,6 @@ export async function executeInteractionSequence(
   }
 }
 
-// Exemple d'utilisation avec fast-check
 export function createInteractionProperty({
   renderComponent,
   invariants,
