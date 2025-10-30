@@ -1,8 +1,12 @@
 import fc from "fast-check";
 import { describe, expect, test } from "vitest";
-import { render, within } from "@testing-library/react";
+import { render, waitFor, within } from "@testing-library/react";
 
-import { createInteractionProperty } from "../../../src/createInteractionProperty";
+import {
+  clickArbitrary,
+  createInteractionProperty,
+  keyboardArbitrary,
+} from "../../../src/createInteractionProperty";
 import { ShoppingCart } from "./ShoppingCart";
 
 describe("ShoppingCart", () => {
@@ -11,7 +15,7 @@ describe("ShoppingCart", () => {
       createInteractionProperty({
         setup: () => render(<ShoppingCart />).container,
         invariants: [
-          (container, interactions) => {
+          async (container, interactions) => {
             const cartQuantity = within(container).getByTestId("cart-quantity");
             const clickInteractionsOnCartButtons = interactions.filter(
               (interaction) =>
@@ -20,19 +24,52 @@ describe("ShoppingCart", () => {
                   interaction.selectedElement as HTMLElement
                 )?.dataset.testid?.startsWith("add-")
             );
+            const keypressesOnCartButtons = interactions.filter(
+              (interaction) =>
+                interaction.type === "keyboard" &&
+                (
+                  interaction.selectedElement as HTMLElement
+                )?.dataset.testid?.startsWith("add-") &&
+                ["{Enter}", "{Space}"].includes(interaction.keys)
+            );
 
             console.log({
               interactions,
               cartQuantity: cartQuantity.textContent,
               clickInteractionsOnCartButtons,
+              keypressesOnCartButtons,
             });
-            expect(cartQuantity.textContent).toBe(
-              `${clickInteractionsOnCartButtons.length}`
+            await waitFor(() =>
+              expect(cartQuantity.textContent).toBe(
+                `${
+                  clickInteractionsOnCartButtons.length +
+                  keypressesOnCartButtons.length
+                }`
+              )
             );
           },
         ],
-      }),
-      { numRuns: 100 }
+        options: {
+          userInteractionArbitrary: () =>
+            fc.oneof(
+              {
+                weight: 1,
+                arbitrary: clickArbitrary({
+                  selector: 'button[data-testid^="add-"]',
+                }),
+              },
+              {
+                weight: 1,
+                arbitrary: keyboardArbitrary({
+                  keys: fc.oneof(
+                    fc.constant("{Enter}"),
+                    fc.constant("{Space}")
+                  ),
+                }),
+              }
+            ),
+        },
+      })
     );
   }, 60_000);
 });

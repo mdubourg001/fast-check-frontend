@@ -31,7 +31,6 @@ export type TypeInteraction = {
 export type KeyboardInteraction = {
   type: "keyboard";
   keys: string;
-  selector?: string; // Optional, otherwise on the active element
   selectedElement?: Element;
 };
 
@@ -261,7 +260,6 @@ export const typeArbitrary: (
 
 type KeyboardArbitraryInput = {
   keys?: string | fc.Arbitrary<string>;
-  selector?: string | fc.Arbitrary<string | undefined>;
 };
 
 export const keyboardArbitrary: (
@@ -273,10 +271,6 @@ export const keyboardArbitrary: (
       interaction.keys !== undefined
         ? toArbitrary(interaction.keys)
         : specialKeysArbitrary,
-    selector:
-      interaction.selector !== undefined
-        ? toArbitrary(interaction.selector)
-        : fc.option(selectorArbitrary(), { nil: undefined }),
   });
 
 type HoverArbitraryInput = {
@@ -455,14 +449,8 @@ export async function executeInteraction(
       }
 
       case "keyboard": {
-        if (interaction.selector) {
-          const element = container.querySelector(interaction.selector);
-          if (element) {
-            interaction.selectedElement = element;
+        interaction.selectedElement = document.activeElement ?? undefined;
 
-            await user.click(element);
-          }
-        }
         await user.keyboard(interaction.keys);
         break;
       }
@@ -589,7 +577,7 @@ export function createInteractionProperty({
     (
       container: HTMLElement,
       interactions: UserInteraction[]
-    ) => boolean | Promise<boolean> | void
+    ) => boolean | Promise<boolean> | void | Promise<void>
   >;
   options?: {
     sequenceMinLength?: number;
