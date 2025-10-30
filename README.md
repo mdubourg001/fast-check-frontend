@@ -1,4 +1,4 @@
-# ceinture-bretelles
+# fast-check-frontend
 
 **Note: This library is currently a work in progress and not yet ready for production use.**
 
@@ -8,7 +8,7 @@ Property-based testing for UI components. Generate random user interaction seque
 
 Traditional UI tests specify exact user flows: "click button A, type text B, verify outcome C". This approach misses edge cases created by unexpected interaction sequences.
 
-**ceinture-bretelles** takes a different approach inspired by property-based testing:
+**fast-check-frontend** takes a different approach inspired by property-based testing:
 
 1. Define what should **always** be true about your component (invariants)
 2. Generate hundreds of random interaction sequences (clicks, typing, keyboard shortcuts, etc.)
@@ -22,7 +22,7 @@ The library combines [fast-check](https://github.com/dubzzz/fast-check) for prop
 ### Installation
 
 ```bash
-pnpm add -D ceinture-bretelles fast-check @testing-library/user-event @testing-library/dom
+pnpm add -D fast-check-frontend fast-check @testing-library/user-event @testing-library/dom
 ```
 
 ### Basic Example
@@ -32,7 +32,7 @@ Here's a test for a signup form that verifies three invariants under random inte
 ```typescript
 import fc from "fast-check";
 import { render } from "@testing-library/react";
-import { createInteractionProperty } from "ceinture-bretelles";
+import { createInteractionProperty } from "fast-check-frontend";
 import { SignupForm } from "./SignupForm";
 
 it("maintains invariants under random interactions", async () => {
@@ -85,7 +85,7 @@ The library works with any test runner that supports async tests (Vitest, Jest, 
 Focus testing on specific interactions:
 
 ```typescript
-import { clickArbitrary, typeArbitrary } from "ceinture-bretelles";
+import { clickArbitrary, typeArbitrary } from "fast-check-frontend";
 
 createInteractionProperty({
   setup: () => render(<MyComponent />).container,
@@ -191,7 +191,7 @@ import {
   uploadArbitrary,
   clearArbitrary,
   tabArbitrary
-} from "ceinture-bretelles";
+} from "fast-check-frontend";
 
 // Each arbitrary can be customized
 const customClick = clickArbitrary({

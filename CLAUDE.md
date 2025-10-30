@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**ceinture-bretelles** is a property-based testing library for UI components that generates and executes random user interaction sequences to verify component invariants. The name means "belt and suspenders" in French, representing redundant safety measures.
+**fast-check-frontend** is a property-based testing library for UI components that generates and executes random user interaction sequences to verify component invariants. The name means "belt and suspenders" in French, representing redundant safety measures.
 
 ## Core Architecture
 
