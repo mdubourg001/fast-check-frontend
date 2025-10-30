@@ -22,12 +22,12 @@
 
 ### Code Organization
 
-- [ ] Split 655-line file into modules:
-  - [ ] `types.ts` - Type definitions
-  - [ ] `arbitraries.ts` - Arbitrary generators
-  - [ ] `execution.ts` - Interaction execution
-  - [ ] `property.ts` - Property creation
-  - [ ] `utils.ts` - Helper functions
+- [x] Split 655-line file into modules:
+  - [x] `types.ts` - Type definitions
+  - [x] `arbitraries.ts` - Arbitrary generators
+  - [x] `execution.ts` - Interaction execution
+  - [x] `property.ts` - Property creation
+  - [x] `utils.ts` - Helper functions
 
 ### Extensibility
 

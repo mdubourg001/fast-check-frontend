@@ -6,7 +6,7 @@ import {
   clickArbitrary,
   createInteractionProperty,
   keyboardArbitrary,
-} from "../../../src/createInteractionProperty";
+} from "../../../src/";
 import { ShoppingCart } from "./ShoppingCart";
 
 describe("ShoppingCart", () => {

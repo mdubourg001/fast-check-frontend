@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { render } from "@testing-library/react";
 import * as fc from "fast-check";
+
 import { TodoList } from "./TodoList";
 import {
   createInteractionProperty,
@@ -9,7 +10,7 @@ import {
   keyboardArbitrary,
   tabArbitrary,
   type UserInteraction,
-} from "../../../src/createInteractionProperty";
+} from "../../../src/";
 
 describe("TodoList", () => {
   it("should maintain invariants under random user interactions", async () => {

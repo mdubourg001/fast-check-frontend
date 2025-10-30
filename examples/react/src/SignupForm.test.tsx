@@ -5,7 +5,7 @@ import {
   clickArbitrary,
   createInteractionProperty,
   typeArbitrary,
-} from "../../../src/createInteractionProperty";
+} from "../../../src/";
 import { SignupForm } from "./SignupForm";
 
 describe("SignupForm", () => {
