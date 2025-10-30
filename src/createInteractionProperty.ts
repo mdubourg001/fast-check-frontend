@@ -407,6 +407,15 @@ export const interactionSequenceArbitrary = (
 ): fc.Arbitrary<UserInteraction[]> =>
   fc.array(interactionsSequenceArbitrary(), { minLength, maxLength });
 
+// Helper function to escape special user-event characters
+function escapeUserEventText(text: string): string {
+  return text
+    .replace(/\{/g, "{{")
+    .replace(/\}/g, "}}")
+    .replace(/\[/g, "[[")
+    .replace(/\]/g, "]]");
+}
+
 // Function to execute an interaction
 export async function executeInteraction(
   container: HTMLElement,
@@ -443,7 +452,11 @@ export async function executeInteraction(
           if (!interaction.options?.skipClick) {
             await user.click(element);
           }
-          await user.type(element, interaction.text, interaction.options);
+          await user.type(
+            element,
+            escapeUserEventText(interaction.text),
+            interaction.options
+          );
         }
         break;
       }
