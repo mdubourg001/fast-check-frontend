@@ -11,9 +11,8 @@ import {
   type UserInteraction,
 } from "../../../src/createInteractionProperty";
 
-describe("TodoList - Property-Based Tests", () => {
+describe("TodoList", () => {
   it("should maintain invariants under random user interactions", async () => {
-    // Custom interaction arbitrary that targets TodoList-specific elements
     const todoListInteractionArbitrary = (): fc.Arbitrary<UserInteraction> =>
       fc.oneof(
         // Type into the todo input

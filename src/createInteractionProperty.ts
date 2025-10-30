@@ -50,6 +50,7 @@ export type SelectInteraction = {
   type: "select";
   selector: string;
   selectedElement?: Element;
+  options?: string[];
 };
 
 export type UploadInteraction = {
@@ -82,38 +83,35 @@ export type UserInteraction =
   | ClearInteraction
   | TabInteraction;
 
+const defaultSelectors = [
+  // selectors by ARIA role
+  '[role="button"]',
+  '[role="link"]',
+  '[role="textbox"]',
+  '[role="combobox"]',
+  '[role="checkbox"]',
+  '[role="radio"]',
+
+  // selectors by element type
+  "button",
+  "a",
+  'input[type="text"]',
+  'input[type="number"]',
+  'input[type="email"]',
+  'input[type="password"]',
+  'input[type="checkbox"]',
+  'input[type="radio"]',
+  "select",
+  "textarea",
+];
+
 // Arbitraries for common CSS selectors
-const selectorArbitrary = (otherSelectors: string[] = []) => {
-  const selectors = [
-    fc.constantFrom(
-      '[role="button"]',
-      '[role="link"]',
-      '[role="textbox"]',
-      '[role="combobox"]',
-      '[role="checkbox"]',
-      '[role="radio"]'
-    ),
-
-    // selectors by element type
-    fc.constantFrom(
-      "button",
-      "a",
-      'input[type="text"]',
-      'input[type="number"]',
-      'input[type="email"]',
-      'input[type="password"]',
-      'input[type="checkbox"]',
-      'input[type="radio"]',
-      "select",
-      "textarea"
-    ),
-  ] as fc.Arbitrary<string>[];
-
-  if (otherSelectors.length > 0) {
-    selectors.push(fc.constantFrom(...otherSelectors));
+const selectorArbitrary = (selectors?: string[]) => {
+  if (selectors) {
+    return fc.constantFrom(...selectors);
+  } else {
+    return fc.constantFrom(...defaultSelectors);
   }
-
-  return fc.oneof(...selectors);
 };
 
 // Arbitraries for different text types
@@ -305,6 +303,7 @@ export const unhoverArbitrary: (
 
 type SelectArbitraryInput = {
   selector?: string | fc.Arbitrary<string>;
+  options?: string[] | fc.Arbitrary<string[]>;
 };
 
 export const selectArbitrary: (
@@ -316,6 +315,10 @@ export const selectArbitrary: (
       interaction.selector !== undefined
         ? toArbitrary(interaction.selector)
         : fc.constant("select"),
+    options:
+      interaction.options !== undefined
+        ? toArbitrary(interaction.options)
+        : fc.constant(undefined),
   });
 
 type UploadArbitraryInput = {
@@ -385,19 +388,38 @@ export const tabArbitrary: (
   });
 
 // Main arbitrary that combines all interactions
-export const defaultUserInteractionArbitrary =
-  (): fc.Arbitrary<UserInteraction> =>
-    fc.oneof(
-      { weight: 30, arbitrary: clickArbitrary() }, // More clicks
-      { weight: 25, arbitrary: typeArbitrary() }, // Lots of typing
-      { weight: 10, arbitrary: keyboardArbitrary() }, // Keyboard actions
-      { weight: 8, arbitrary: hoverArbitrary() }, // Hover
-      { weight: 2, arbitrary: unhoverArbitrary() }, // Unhover
-      { weight: 5, arbitrary: selectArbitrary() }, // List selection
-      { weight: 2, arbitrary: uploadArbitrary() }, // File upload
-      { weight: 5, arbitrary: clearArbitrary() }, // Clear
-      { weight: 13, arbitrary: tabArbitrary() } // Keyboard navigation
-    );
+export const defaultUserInteractionArbitrary = ({
+  clickInteraction,
+  typeInteraction,
+  keyboardInteraction,
+  hoverInteraction,
+  unhoverInteraction,
+  selectInteraction,
+  uploadInteraction,
+  clearInteraction,
+  tabInteraction,
+}: {
+  clickInteraction?: ClickArbitraryInput;
+  typeInteraction?: TypeArbitraryInput;
+  keyboardInteraction?: KeyboardArbitraryInput;
+  hoverInteraction?: HoverArbitraryInput;
+  unhoverInteraction?: UnhoverArbitraryInput;
+  selectInteraction?: SelectArbitraryInput;
+  uploadInteraction?: UploadArbitraryInput;
+  clearInteraction?: ClearArbitraryInput;
+  tabInteraction?: TabArbitraryInput;
+} = {}): fc.Arbitrary<UserInteraction> =>
+  fc.oneof(
+    { weight: 30, arbitrary: clickArbitrary(clickInteraction) }, // More clicks
+    { weight: 25, arbitrary: typeArbitrary(typeInteraction) }, // Lots of typing
+    { weight: 10, arbitrary: keyboardArbitrary(keyboardInteraction) }, // Keyboard actions
+    { weight: 8, arbitrary: hoverArbitrary(hoverInteraction) }, // Hover
+    { weight: 2, arbitrary: unhoverArbitrary(unhoverInteraction) }, // Unhover
+    { weight: 5, arbitrary: selectArbitrary(selectInteraction) }, // List selection
+    { weight: 2, arbitrary: uploadArbitrary(uploadInteraction) }, // File upload
+    { weight: 5, arbitrary: clearArbitrary(clearInteraction) }, // Clear
+    { weight: 13, arbitrary: tabArbitrary(tabInteraction) } // Keyboard navigation
+  );
 
 // Arbitrary for interaction sequences
 export const interactionSequenceArbitrary = (
@@ -496,18 +518,18 @@ export async function executeInteraction(
         const element = container.querySelector(
           interaction.selector
         ) as HTMLSelectElement;
+
         if (element) {
           interaction.selectedElement = element;
 
           const options =
-            within(element).getAllByRole<HTMLOptionElement>("option");
+            interaction.options ??
+            within(element)
+              .getAllByRole<HTMLOptionElement>("option")
+              .map((opt) => opt.value);
+          const optionToSelect = fc.sample(fc.constantFrom(...options), 1)[0];
 
-          const randomOption = fc.sample(
-            fc.constantFrom(...options.map((opt) => opt.value)),
-            1
-          )[0];
-
-          await user.selectOptions(element, randomOption);
+          await user.selectOptions(element, optionToSelect);
         }
         break;
       }
