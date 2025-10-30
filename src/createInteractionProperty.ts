@@ -50,7 +50,7 @@ export type SelectInteraction = {
   type: "select";
   selector: string;
   selectedElement?: Element;
-  options?: string[];
+  option?: string; // Specific option value to select
 };
 
 export type UploadInteraction = {
@@ -303,7 +303,7 @@ export const unhoverArbitrary: (
 
 type SelectArbitraryInput = {
   selector?: string | fc.Arbitrary<string>;
-  options?: string[] | fc.Arbitrary<string[]>;
+  option?: string | fc.Arbitrary<string | undefined>;
 };
 
 export const selectArbitrary: (
@@ -315,9 +315,9 @@ export const selectArbitrary: (
       interaction.selector !== undefined
         ? toArbitrary(interaction.selector)
         : fc.constant("select"),
-    options:
-      interaction.options !== undefined
-        ? toArbitrary(interaction.options)
+    option:
+      interaction.option !== undefined
+        ? toArbitrary(interaction.option)
         : fc.constant(undefined),
   });
 
@@ -522,14 +522,23 @@ export async function executeInteraction(
         if (element) {
           interaction.selectedElement = element;
 
-          const options =
-            interaction.options ??
-            within(element)
+          // Use the predetermined option if provided, otherwise pick first available
+          let optionToSelect = interaction.option;
+
+          if (!optionToSelect) {
+            const availableOptions = within(element)
               .getAllByRole<HTMLOptionElement>("option")
               .map((opt) => opt.value);
-          const optionToSelect = fc.sample(fc.constantFrom(...options), 1)[0];
 
-          await user.selectOptions(element, optionToSelect);
+            // Guard against empty options
+            if (availableOptions.length > 0) {
+              optionToSelect = availableOptions[0];
+            }
+          }
+
+          if (optionToSelect) {
+            await user.selectOptions(element, optionToSelect);
+          }
         }
         break;
       }
