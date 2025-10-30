@@ -1,5 +1,5 @@
-import { SignupForm } from "./SignupForm";
+import { ShoppingCart } from "./ShoppingCart";
 
 export function App() {
-  return <SignupForm />;
+  return <ShoppingCart />;
 }

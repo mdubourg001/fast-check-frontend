@@ -6,6 +6,7 @@ import userEvent from "@testing-library/user-event";
 export type ClickInteraction = {
   type: "click";
   selector: string;
+  selectedElement?: Element;
   options?: {
     ctrlKey?: boolean;
     shiftKey?: boolean;
@@ -18,6 +19,7 @@ export type ClickInteraction = {
 export type TypeInteraction = {
   type: "type";
   selector: string;
+  selectedElement?: Element;
   text: string;
   options?: {
     delay?: number;
@@ -30,32 +32,38 @@ export type KeyboardInteraction = {
   type: "keyboard";
   keys: string;
   selector?: string; // Optional, otherwise on the active element
+  selectedElement?: Element;
 };
 
 export type HoverInteraction = {
   type: "hover";
   selector: string;
+  selectedElement?: Element;
 };
 
 export type UnhoverInteraction = {
   type: "unhover";
   selector: string;
+  selectedElement?: Element;
 };
 
 export type SelectInteraction = {
   type: "select";
   selector: string;
+  selectedElement?: Element;
 };
 
 export type UploadInteraction = {
   type: "upload";
   selector: string;
+  selectedElement?: Element;
   files: Array<{ name: string; content: string; type: string }>;
 };
 
 export type ClearInteraction = {
   type: "clear";
   selector: string;
+  selectedElement?: Element;
 };
 
 export type TabInteraction = {
@@ -76,9 +84,8 @@ export type UserInteraction =
   | TabInteraction;
 
 // Arbitraries for common CSS selectors
-const selectorArbitrary = (otherSelectors: string[] = []) =>
-  fc.oneof(
-    // selectors by ARIA role
+const selectorArbitrary = (otherSelectors: string[] = []) => {
+  const selectors = [
     fc.constantFrom(
       '[role="button"]',
       '[role="link"]',
@@ -101,10 +108,14 @@ const selectorArbitrary = (otherSelectors: string[] = []) =>
       "select",
       "textarea"
     ),
+  ] as fc.Arbitrary<string>[];
 
-    // other custom selectors
-    fc.constantFrom(...otherSelectors)
-  );
+  if (otherSelectors.length > 0) {
+    selectors.push(fc.constantFrom(...otherSelectors));
+  }
+
+  return fc.oneof(...selectors);
+};
 
 // Arbitraries for different text types
 const textContentArbitrary = () =>
@@ -171,7 +182,9 @@ function toArbitrary<T>(value: T | fc.Arbitrary<T>): fc.Arbitrary<T> {
 
 type ClickArbitraryInput = {
   selector?: string | fc.Arbitrary<string>;
-  options?: ClickInteraction["options"] | fc.Arbitrary<ClickInteraction["options"]>;
+  options?:
+    | ClickInteraction["options"]
+    | fc.Arbitrary<ClickInteraction["options"]>;
   nth?: number | fc.Arbitrary<number | undefined>;
 };
 
@@ -180,29 +193,34 @@ export const clickArbitrary: (
 ) => fc.Arbitrary<ClickInteraction> = (interaction = {}) =>
   fc.record({
     type: fc.constant("click" as const),
-    selector: interaction.selector !== undefined
-      ? toArbitrary(interaction.selector)
-      : selectorArbitrary(),
-    options: interaction.options !== undefined
-      ? toArbitrary(interaction.options)
-      : fc.option(
-          fc.record({
-            ctrlKey: fc.boolean(),
-            shiftKey: fc.boolean(),
-            altKey: fc.boolean(),
-            button: fc.constantFrom(0, 1, 2) as fc.Arbitrary<0 | 1 | 2>,
-          }),
-          { nil: undefined }
-        ),
-    nth: interaction.nth !== undefined
-      ? toArbitrary(interaction.nth)
-      : fc.option(fc.integer({ min: 0, max: 10 }), { nil: undefined }),
+    selector:
+      interaction.selector !== undefined
+        ? toArbitrary(interaction.selector)
+        : selectorArbitrary(),
+    options:
+      interaction.options !== undefined
+        ? toArbitrary(interaction.options)
+        : fc.option(
+            fc.record({
+              ctrlKey: fc.boolean(),
+              shiftKey: fc.boolean(),
+              altKey: fc.boolean(),
+              button: fc.constantFrom(0, 1, 2) as fc.Arbitrary<0 | 1 | 2>,
+            }),
+            { nil: undefined }
+          ),
+    nth:
+      interaction.nth !== undefined
+        ? toArbitrary(interaction.nth)
+        : fc.option(fc.integer({ min: 0, max: 10 }), { nil: undefined }),
   });
 
 type TypeArbitraryInput = {
   selector?: string | fc.Arbitrary<string>;
   text?: string | fc.Arbitrary<string>;
-  options?: TypeInteraction["options"] | fc.Arbitrary<TypeInteraction["options"]>;
+  options?:
+    | TypeInteraction["options"]
+    | fc.Arbitrary<TypeInteraction["options"]>;
 };
 
 export const typeArbitrary: (
@@ -210,32 +228,35 @@ export const typeArbitrary: (
 ) => fc.Arbitrary<TypeInteraction> = (interaction = {}) =>
   fc.record({
     type: fc.constant("type" as const),
-    selector: interaction.selector !== undefined
-      ? toArbitrary(interaction.selector)
-      : fc.oneof(
-          fc.constant('input[type="text"]'),
-          fc.constant('input[type="number"]'),
-          fc.constant('input[type="email"]'),
-          fc.constant('input[type="password"]'),
-          fc.constant('input[type="search"]'),
-          fc.constant('input[type="tel"]'),
-          fc.constant('input[type="url"]'),
-          fc.constant("textarea"),
-          fc.constant('[contenteditable="true"]')
-        ),
-    text: interaction.text !== undefined
-      ? toArbitrary(interaction.text)
-      : textContentArbitrary(),
-    options: interaction.options !== undefined
-      ? toArbitrary(interaction.options)
-      : fc.option(
-          fc.record({
-            delay: fc.integer({ min: 0, max: 100 }),
-            skipClick: fc.boolean(),
-            skipAutoClose: fc.boolean(),
-          }),
-          { nil: undefined }
-        ),
+    selector:
+      interaction.selector !== undefined
+        ? toArbitrary(interaction.selector)
+        : fc.oneof(
+            fc.constant('input[type="text"]'),
+            fc.constant('input[type="number"]'),
+            fc.constant('input[type="email"]'),
+            fc.constant('input[type="password"]'),
+            fc.constant('input[type="search"]'),
+            fc.constant('input[type="tel"]'),
+            fc.constant('input[type="url"]'),
+            fc.constant("textarea"),
+            fc.constant('[contenteditable="true"]')
+          ),
+    text:
+      interaction.text !== undefined
+        ? toArbitrary(interaction.text)
+        : textContentArbitrary(),
+    options:
+      interaction.options !== undefined
+        ? toArbitrary(interaction.options)
+        : fc.option(
+            fc.record({
+              delay: fc.integer({ min: 0, max: 100 }),
+              skipClick: fc.boolean(),
+              skipAutoClose: fc.boolean(),
+            }),
+            { nil: undefined }
+          ),
   });
 
 type KeyboardArbitraryInput = {
@@ -248,12 +269,14 @@ export const keyboardArbitrary: (
 ) => fc.Arbitrary<KeyboardInteraction> = (interaction = {}) =>
   fc.record({
     type: fc.constant("keyboard" as const),
-    keys: interaction.keys !== undefined
-      ? toArbitrary(interaction.keys)
-      : specialKeysArbitrary,
-    selector: interaction.selector !== undefined
-      ? toArbitrary(interaction.selector)
-      : fc.option(selectorArbitrary(), { nil: undefined }),
+    keys:
+      interaction.keys !== undefined
+        ? toArbitrary(interaction.keys)
+        : specialKeysArbitrary,
+    selector:
+      interaction.selector !== undefined
+        ? toArbitrary(interaction.selector)
+        : fc.option(selectorArbitrary(), { nil: undefined }),
   });
 
 type HoverArbitraryInput = {
@@ -265,9 +288,10 @@ export const hoverArbitrary: (
 ) => fc.Arbitrary<HoverInteraction> = (interaction = {}) =>
   fc.record({
     type: fc.constant("hover" as const),
-    selector: interaction.selector !== undefined
-      ? toArbitrary(interaction.selector)
-      : selectorArbitrary(),
+    selector:
+      interaction.selector !== undefined
+        ? toArbitrary(interaction.selector)
+        : selectorArbitrary(),
   });
 
 type UnhoverArbitraryInput = {
@@ -279,9 +303,10 @@ export const unhoverArbitrary: (
 ) => fc.Arbitrary<UnhoverInteraction> = (interaction = {}) =>
   fc.record({
     type: fc.constant("unhover" as const),
-    selector: interaction.selector !== undefined
-      ? toArbitrary(interaction.selector)
-      : selectorArbitrary(),
+    selector:
+      interaction.selector !== undefined
+        ? toArbitrary(interaction.selector)
+        : selectorArbitrary(),
   });
 
 type SelectArbitraryInput = {
@@ -293,9 +318,10 @@ export const selectArbitrary: (
 ) => fc.Arbitrary<SelectInteraction> = (interaction = {}) =>
   fc.record({
     type: fc.constant("select" as const),
-    selector: interaction.selector !== undefined
-      ? toArbitrary(interaction.selector)
-      : fc.constant("select"),
+    selector:
+      interaction.selector !== undefined
+        ? toArbitrary(interaction.selector)
+        : fc.constant("select"),
   });
 
 type UploadArbitraryInput = {
@@ -308,19 +334,25 @@ export const uploadArbitrary: (
 ) => fc.Arbitrary<UploadInteraction> = (interaction = {}) =>
   fc.record({
     type: fc.constant("upload" as const),
-    selector: interaction.selector !== undefined
-      ? toArbitrary(interaction.selector)
-      : fc.constant('input[type="file"]'),
-    files: interaction.files !== undefined
-      ? toArbitrary(interaction.files)
-      : fc.array(
-          fc.record({
-            name: fc.constantFrom("test.txt", "image.png", "document.pdf"),
-            content: fc.string({ minLength: 10, maxLength: 100 }),
-            type: fc.constantFrom("text/plain", "image/png", "application/pdf"),
-          }),
-          { minLength: 1, maxLength: 3 }
-        ),
+    selector:
+      interaction.selector !== undefined
+        ? toArbitrary(interaction.selector)
+        : fc.constant('input[type="file"]'),
+    files:
+      interaction.files !== undefined
+        ? toArbitrary(interaction.files)
+        : fc.array(
+            fc.record({
+              name: fc.constantFrom("test.txt", "image.png", "document.pdf"),
+              content: fc.string({ minLength: 10, maxLength: 100 }),
+              type: fc.constantFrom(
+                "text/plain",
+                "image/png",
+                "application/pdf"
+              ),
+            }),
+            { minLength: 1, maxLength: 3 }
+          ),
   });
 
 type ClearArbitraryInput = {
@@ -332,9 +364,10 @@ export const clearArbitrary: (
 ) => fc.Arbitrary<ClearInteraction> = (interaction = {}) =>
   fc.record({
     type: fc.constant("clear" as const),
-    selector: interaction.selector !== undefined
-      ? toArbitrary(interaction.selector)
-      : fc.oneof(fc.constant("input"), fc.constant("textarea")),
+    selector:
+      interaction.selector !== undefined
+        ? toArbitrary(interaction.selector)
+        : fc.oneof(fc.constant("input"), fc.constant("textarea")),
   });
 
 type TabArbitraryInput = {
@@ -347,12 +380,14 @@ export const tabArbitrary: (
 ) => fc.Arbitrary<TabInteraction> = (interaction = {}) =>
   fc.record({
     type: fc.constant("tab" as const),
-    shift: interaction.shift !== undefined
-      ? toArbitrary(interaction.shift)
-      : fc.boolean(),
-    times: interaction.times !== undefined
-      ? toArbitrary(interaction.times)
-      : fc.integer({ min: 1, max: 5 }),
+    shift:
+      interaction.shift !== undefined
+        ? toArbitrary(interaction.shift)
+        : fc.boolean(),
+    times:
+      interaction.times !== undefined
+        ? toArbitrary(interaction.times)
+        : fc.integer({ min: 1, max: 5 }),
   });
 
 // Main arbitrary that combines all interactions
@@ -394,6 +429,8 @@ export async function executeInteraction(
             : elements[0];
 
         if (element) {
+          interaction.selectedElement = element;
+
           if (interaction.options) {
             // @ts-expect-error "click" actually accepts options
             await user.click(element as Element, interaction.options);
@@ -407,6 +444,8 @@ export async function executeInteraction(
       case "type": {
         const element = container.querySelector(interaction.selector);
         if (element) {
+          interaction.selectedElement = element;
+
           if (!interaction.options?.skipClick) {
             await user.click(element);
           }
@@ -419,6 +458,8 @@ export async function executeInteraction(
         if (interaction.selector) {
           const element = container.querySelector(interaction.selector);
           if (element) {
+            interaction.selectedElement = element;
+
             await user.click(element);
           }
         }
@@ -429,6 +470,8 @@ export async function executeInteraction(
       case "hover": {
         const element = container.querySelector(interaction.selector);
         if (element) {
+          interaction.selectedElement = element;
+
           await user.hover(element);
         }
         break;
@@ -437,6 +480,8 @@ export async function executeInteraction(
       case "unhover": {
         const element = container.querySelector(interaction.selector);
         if (element) {
+          interaction.selectedElement = element;
+
           await user.unhover(element);
         }
         break;
@@ -447,6 +492,8 @@ export async function executeInteraction(
           interaction.selector
         ) as HTMLSelectElement;
         if (element) {
+          interaction.selectedElement = element;
+
           const options =
             within(element).getAllByRole<HTMLOptionElement>("option");
 
@@ -465,6 +512,8 @@ export async function executeInteraction(
           interaction.selector
         ) as HTMLInputElement;
         if (element) {
+          interaction.selectedElement = element;
+
           const files = interaction.files.map(
             (f) => new File([f.content], f.name, { type: f.type })
           );
@@ -476,6 +525,8 @@ export async function executeInteraction(
       case "clear": {
         const element = container.querySelector(interaction.selector);
         if (element) {
+          interaction.selectedElement = element;
+
           await user.clear(element);
         }
         break;
@@ -534,7 +585,12 @@ export function createInteractionProperty({
   },
 }: {
   setup: () => HTMLElement;
-  invariants: Array<(container: HTMLElement) => boolean | Promise<boolean>>;
+  invariants: Array<
+    (
+      container: HTMLElement,
+      interactions: UserInteraction[]
+    ) => boolean | Promise<boolean> | void
+  >;
   options?: {
     sequenceMinLength?: number;
     sequenceMaxLength?: number;
@@ -548,17 +604,15 @@ export function createInteractionProperty({
       options?.userInteractionArbitrary
     ),
     async (interactions) => {
-      console.debug({ interactions });
-
       const container = setup();
 
       try {
         await executeInteractionSequence(container, interactions);
 
         for (const invariant of invariants) {
-          const result = await invariant(container);
+          const result = await invariant(container, interactions);
 
-          if (!result) {
+          if (typeof result === "boolean" && !result) {
             throw new Error("Failed interactions:", { cause: interactions });
           }
         }

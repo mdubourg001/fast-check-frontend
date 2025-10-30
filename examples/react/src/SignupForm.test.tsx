@@ -9,7 +9,7 @@ import {
 import { SignupForm } from "./SignupForm";
 
 describe("SignupForm", () => {
-  it("reste stable sous interactions aléatoires", async () => {
+  it("remain stable under random interactions", async () => {
     await fc.assert(
       createInteractionProperty({
         setup: () => render(<SignupForm />).container,
