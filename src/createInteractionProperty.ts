@@ -640,7 +640,7 @@ export function createInteractionProperty({
           const result = await invariant(container, interactions);
 
           if (typeof result === "boolean" && !result) {
-            throw new Error("Failed interactions:", { cause: interactions });
+            throw new Error("Invariant check failed after interaction sequence", { cause: interactions });
           }
         }
 
