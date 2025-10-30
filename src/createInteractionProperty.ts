@@ -452,11 +452,15 @@ export async function executeInteraction(
           if (!interaction.options?.skipClick) {
             await user.click(element);
           }
-          await user.type(
-            element,
-            escapeUserEventText(interaction.text),
-            interaction.options
-          );
+
+          // Skip typing if text is empty (user-event can't handle empty strings)
+          if (interaction.text !== "") {
+            await user.type(
+              element,
+              escapeUserEventText(interaction.text),
+              interaction.options
+            );
+          }
         }
         break;
       }

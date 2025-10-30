@@ -78,9 +78,7 @@ describe("TodoList - Property-Based Tests", () => {
       invariants: [
         // Invariant 1: Count consistency
         // completed count + active count should always equal total count
-        (container, interactions) => {
-          console.debug({ interactions });
-
+        (container) => {
           const counter = container.querySelector(
             '[data-testid="todo-counter"]'
           );
