@@ -2,6 +2,10 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Global
+
+In all interactions, be extremely concise and sacrifice grammar for the sake of concision.
+
 ## Project Overview
 
 **fast-check-frontend** is a property-based testing library for UI components that generates and executes random user interaction sequences to verify component invariants. The name means "belt and suspenders" in French, representing redundant safety measures.

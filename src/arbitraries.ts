@@ -58,6 +58,8 @@ const textContentArbitrary = () =>
   fc.oneof(
     // random normal strings
     fc.string({ minLength: 1, maxLength: 100 }),
+    // extremely long strings (>1000 chars)
+    fc.string({ minLength: 1000, maxLength: 5000 }),
     // email
     fc.emailAddress(),
     // numbers
@@ -76,7 +78,38 @@ const textContentArbitrary = () =>
       "\\n\\t\\r",
       "0",
       "-1",
-      "999999999999999999999"
+      "999999999999999999999",
+      // zero-width characters
+      "\u200B", // zero-width space
+      "\u200C", // zero-width non-joiner
+      "\u200D", // zero-width joiner
+      "test\u200Bword", // zero-width space in middle
+      "\u200B\u200C\u200D", // multiple zero-width chars
+      // RTL/BiDi text
+      "שלום", // Hebrew: Shalom (Hello)
+      "مرحبا", // Arabic: Marhaba (Hello)
+      "مرحبا بك في العالم", // Arabic: Welcome to the world
+      "עברית ו-English", // Mixed Hebrew and English
+      "العربية and English", // Mixed Arabic and English
+      // complex emoji sequences
+      "👨‍👩‍👧‍👦", // family emoji (man, woman, girl, boy)
+      "🏳️‍🌈", // rainbow flag
+      "👨‍💻", // man technologist
+      "👩‍🔬", // woman scientist
+      "🧑‍🤝‍🧑", // people holding hands
+      "👨‍👨‍👧‍👦", // family with two fathers
+      "🏴󠁧󠁢󠁥󠁮󠁧󠁿", // England flag
+      // surrogate pairs and edge case Unicode
+      "𝕳𝖊𝖑𝖑𝖔", // mathematical bold text (surrogate pairs)
+      "𝓗𝓮𝓵𝓵𝓸", // mathematical script (surrogate pairs)
+      "🤖🚀💻", // multiple emoji
+      "\uD83D\uDE00", // grinning face emoji as surrogate pair
+      "a\uD800", // unpaired high surrogate (invalid)
+      "\uDC00b", // unpaired low surrogate (invalid)
+      "𐐷𐐷𐐷", // Deseret capital letter EW (U+10437)
+      "\u0000", // null character
+      "\uFFFD", // replacement character
+      "\uFEFF" // zero-width no-break space (BOM)
     )
   );
 

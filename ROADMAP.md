@@ -41,11 +41,11 @@
 
 ### Text Arbitrary Improvements
 
-- [ ] Add extremely long strings (>1000 chars)
-- [ ] Add zero-width characters (`\u200B`, `\u200C`, `\u200D`)
-- [ ] Add RTL/BiDi text (Hebrew, Arabic)
-- [ ] Add complex emoji sequences (👨‍👩‍👧‍👦, 🏳️‍🌈)
-- [ ] Add surrogate pairs and edge case Unicode
+- [x] Add extremely long strings (>1000 chars)
+- [x] Add zero-width characters (`\u200B`, `\u200C`, `\u200D`)
+- [x] Add RTL/BiDi text (Hebrew, Arabic)
+- [x] Add complex emoji sequences (👨‍👩‍👧‍👦, 🏳️‍🌈)
+- [x] Add surrogate pairs and edge case Unicode
 
 ### Missing Interaction Types
 
