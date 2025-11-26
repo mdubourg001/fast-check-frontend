@@ -1,5 +1,7 @@
 import * as fc from "fast-check";
 
+import { UserInteraction } from "./types";
+
 // Helper to check if a value is a fast-check arbitrary
 export function isArbitrary(value: any): value is fc.Arbitrary<any> {
   return value && typeof value.generate === "function";
@@ -17,4 +19,24 @@ export function escapeUserEventText(text: string): string {
     .replace(/\}/g, "}}")
     .replace(/\[/g, "[[")
     .replace(/\]/g, "]]");
+}
+
+export function formatInteraction(interaction: UserInteraction): string {
+  const formatted: string[] = [interaction.type];
+
+  if ("selector" in interaction) {
+    formatted.push(`on '${interaction.selector}'`);
+  } else {
+    formatted.push(`on <no selector>`);
+  }
+
+  if ("text" in interaction && interaction.text !== undefined) {
+    formatted.push(`(text='${interaction.text}')`);
+  }
+
+  if ("keys" in interaction && interaction.keys !== undefined) {
+    formatted.push(`(keys='${interaction.keys}')`);
+  }
+
+  return formatted.join(" ");
 }

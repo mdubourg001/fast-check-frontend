@@ -19,7 +19,7 @@ export async function executeInteraction(
             : elements[0];
 
         if (element) {
-          interaction.selectedElement = element;
+          interaction.selectedElement = element.cloneNode(true) as Element;
 
           if (interaction.options) {
             // @ts-expect-error "click" actually accepts options

@@ -203,15 +203,24 @@ export const typeArbitrary: (
   });
 
 export const keyboardArbitrary: (
-  interaction?: KeyboardArbitraryInput
-) => fc.Arbitrary<KeyboardInteraction> = (interaction = {}) =>
-  fc.record({
+  interaction?: KeyboardArbitraryInput & {
+    notKeys?: string[];
+  }
+) => fc.Arbitrary<KeyboardInteraction> = (interaction = {}) => {
+  let keys: KeyboardArbitraryInput["keys"] = specialKeysArbitrary;
+  if (interaction.keys) {
+    keys = toArbitrary(interaction.keys);
+  } else if (interaction.notKeys) {
+    keys = specialKeysArbitrary.filter(
+      (k) => !interaction.notKeys!.includes(k)
+    );
+  }
+
+  return fc.record({
     type: fc.constant("keyboard" as const),
-    keys:
-      interaction.keys !== undefined
-        ? toArbitrary(interaction.keys)
-        : specialKeysArbitrary,
+    keys,
   });
+};
 
 export const hoverArbitrary: (
   interaction?: HoverArbitraryInput

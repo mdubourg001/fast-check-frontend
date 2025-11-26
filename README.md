@@ -17,6 +17,17 @@ Traditional UI tests specify exact user flows: "click button A, type text B, ver
 
 The library combines [fast-check](https://github.com/dubzzz/fast-check) for property-based testing with [Testing Library](https://testing-library.com/) for realistic user interactions.
 
+## Philosophy
+
+Rather than testing what your component **should do**, test what it should **never do**:
+- Never crash
+- Never violate accessibility rules
+- Never show multiple modals simultaneously
+- Never lose required field indicators
+- Never enter invalid states
+
+This approach finds edge cases that manual test writing misses.
+
 ## Getting Started
 
 ### Installation
@@ -177,6 +188,8 @@ createInteractionProperty({
 });
 ```
 
+Each interactions object will contain a `selectedElement` key that will contain a copy of the element targeted by the interaction **just before the interaction was executed on it**.
+
 ### Individual Interaction Arbitraries
 
 Use individual interaction types for fine-grained control:
@@ -224,17 +237,6 @@ const customKeyboard = keyboardArbitrary({
 - Simple presentational components with no interactions
 - Testing specific user flows (use regular Testing Library tests)
 - Visual regression testing (use screenshot testing tools)
-
-## Philosophy
-
-Rather than testing what your component **should do**, test what it should **never do**:
-- Never crash
-- Never violate accessibility rules
-- Never show multiple modals simultaneously
-- Never lose required field indicators
-- Never enter invalid states
-
-This approach finds edge cases that manual test writing misses.
 
 ## License
 
