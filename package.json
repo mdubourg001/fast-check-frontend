@@ -2,6 +2,7 @@
   "name": "fast-check-frontend",
   "version": "0.0.1",
   "type": "module",
+  "main": "./src/index.ts",
   "module": "./src/index.ts",
   "scripts": {},
   "files": [

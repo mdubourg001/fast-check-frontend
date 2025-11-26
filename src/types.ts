@@ -68,6 +68,7 @@ export type TabInteraction = {
   type: "tab";
   shift?: boolean;
   times?: number;
+  selectedElement?: undefined;
 };
 
 export type UserInteraction =

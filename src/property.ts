@@ -15,7 +15,7 @@ export function createInteractionProperty({
     userInteractionArbitrary: defaultUserInteractionArbitrary,
   },
 }: {
-  setup: () => HTMLElement;
+  setup: () => HTMLElement | Promise<HTMLElement>;
   invariants: Array<
     (
       container: HTMLElement,
@@ -35,7 +35,7 @@ export function createInteractionProperty({
       options?.userInteractionArbitrary
     ),
     async (interactions) => {
-      const container = setup();
+      const container = await setup();
 
       try {
         await executeInteractionSequence(container, interactions);
@@ -44,7 +44,10 @@ export function createInteractionProperty({
           const result = await invariant(container, interactions);
 
           if (typeof result === "boolean" && !result) {
-            throw new Error("Invariant check failed after interaction sequence", { cause: interactions });
+            throw new Error(
+              "Invariant check failed after interaction sequence",
+              { cause: interactions }
+            );
           }
         }
 
