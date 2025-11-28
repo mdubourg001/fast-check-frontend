@@ -72,6 +72,42 @@ The library works with any test runner that supports async tests (Vitest, Jest, 
 
 ## Advanced Use Cases
 
+### Random Props Generation
+
+Test components with randomly generated props alongside interaction sequences:
+
+```typescript
+createInteractionProperty({
+  // Generate random props for each test run
+  propsArbitrary: fc.record({
+    maxLength: fc.integer({ min: 10, max: 100 }),
+    initialValue: fc.string({ maxLength: 50 }),
+    disabled: fc.boolean(),
+  }),
+
+  // Setup receives the generated props
+  setup: (props) => render(<MyInput {...props} />).container,
+
+  // Invariants can access both container, interactions, and props
+  invariants: [
+    (container, interactions, props) => {
+      const input = container.querySelector('input');
+      // Verify component respects the maxLength prop
+      return !input || input.value.length <= props.maxLength;
+    },
+    (container, interactions, props) => {
+      // Verify disabled prop prevents edits
+      if (props.disabled) {
+        const input = container.querySelector('input');
+        return input?.hasAttribute('disabled') ?? false;
+      }
+
+      return true;
+    },
+  ],
+});
+```
+
 ### Custom Interaction Weights
 
 Focus testing on specific interactions:

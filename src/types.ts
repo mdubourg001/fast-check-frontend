@@ -129,3 +129,19 @@ export type TabArbitraryInput = {
   shift?: boolean | fc.Arbitrary<boolean>;
   times?: number | fc.Arbitrary<number>;
 };
+
+// Property configuration types
+export type InvariantFn<Props = void> = Props extends void
+  ? (
+      container: HTMLElement,
+      interactions: UserInteraction[]
+    ) => boolean | Promise<boolean> | void | Promise<void>
+  : (
+      container: HTMLElement,
+      interactions: UserInteraction[],
+      props: Props
+    ) => boolean | Promise<boolean> | void | Promise<void>;
+
+export type SetupFn<Props = void> = Props extends void
+  ? () => HTMLElement | Promise<HTMLElement>
+  : (props: Props) => HTMLElement | Promise<HTMLElement>;
