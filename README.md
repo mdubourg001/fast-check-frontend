@@ -17,17 +17,6 @@ Traditional UI tests specify exact user flows: "click button A, type text B, ver
 
 The library combines [fast-check](https://github.com/dubzzz/fast-check) for property-based testing with [Testing Library](https://testing-library.com/) for realistic user interactions.
 
-## Philosophy
-
-Rather than testing what your component **should do**, test what it should **never do**:
-- Never crash
-- Never violate accessibility rules
-- Never show multiple modals simultaneously
-- Never lose required field indicators
-- Never enter invalid states
-
-This approach finds edge cases that manual test writing misses.
-
 ## Getting Started
 
 ### Installation
@@ -38,7 +27,7 @@ pnpm add -D fast-check-frontend fast-check @testing-library/user-event @testing-
 
 ### Basic Example
 
-Here's a test for a signup form that verifies three invariants under random interactions:
+Here's a test for a signup form that verifies two invariants under random interactions:
 
 ```typescript
 import fc from "fast-check";
@@ -57,15 +46,7 @@ it("maintains invariants under random interactions", async () => {
         // 1. Component should never crash
         (container) => !container.querySelector(".error-boundary"),
 
-        // 2. Required fields must always be marked
-        (container) => {
-          const required = container.querySelectorAll("[required]");
-          return Array.from(required).every((el) =>
-            el.hasAttribute("aria-required")
-          );
-        },
-
-        // 3. Only one modal open at a time
+        // 2. Only one modal open at a time
         (container) =>
           container.querySelectorAll('[role="dialog"]').length <= 1,
       ],
